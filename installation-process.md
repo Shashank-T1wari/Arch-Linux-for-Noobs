@@ -26,7 +26,7 @@ An ISO file is a complete image of a CD/DVD/USB. It contains all the files and s
 
 Go to:
 
-`https://archlinux.org/download/`
+[https://archlinux.org/download/](https://archlinux.org/download/)
 
 This page is a mirror selection hub. Here's what you'll find:
 
@@ -52,7 +52,7 @@ Click the **PGP signature** link to get the `.sig` file.
 Alternatively, use these direct links:
 
 - ISO: Pick any mirror from the "HTTP Direct Downloads" section (all are identical)
-- `.sig` file direct link: `https://archlinux.org/iso/2026.03.01/archlinux-2026.03.01-x86_64.iso.sig`
+- `.sig` file direct link: [https://archlinux.org/iso/2026.03.01/archlinux-2026.03.01-x86_64.iso.sig](https://archlinux.org/iso/2026.03.01/archlinux-2026.03.01-x86_64.iso.sig)
 
 Download both files to the same folder:
 
@@ -91,7 +91,7 @@ It gives Windows users tools to:
 In this guide, you only need it to run `gpg --verify` and confirm your Arch ISO is authentic.
 
 Install from:
-- `https://gpg4win.org/`
+- [https://gpg4win.org/](https://gpg4win.org/)
 
 When running the .exe installer you will see these options:
 
@@ -149,7 +149,7 @@ No bootable USB = installer cannot start.
 ### 3.1 Easiest method for Windows users (Rufus)
 
 Download Rufus:
-- `https://rufus.ie/`
+- [https://rufus.ie/](https://rufus.ie/)
 
 Steps:
 1. Insert USB pendrive.
@@ -885,6 +885,6 @@ Boot installer again, remount partitions, `arch-chroot`, rerun GRUB commands.
 
 ## 13. Sources
 
-- `https://wiki.archlinux.org/title/Installation_guide`
-- `https://wiki.archlinux.org/title/USB_flash_installation_medium`
-- `https://archlinux.org/download/`
+- [https://wiki.archlinux.org/title/Installation_guide](https://wiki.archlinux.org/title/Installation_guide)
+- [https://wiki.archlinux.org/title/USB_flash_installation_medium](https://wiki.archlinux.org/title/USB_flash_installation_medium)
+- [https://archlinux.org/download/](https://archlinux.org/download/)
