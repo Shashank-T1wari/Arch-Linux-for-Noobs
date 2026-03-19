@@ -1518,6 +1518,9 @@ login prompt (use your regular user account, not root)
 - `visudo`: safely edit the sudo configuration file.
 - `cryptsetup`: manage LUKS encryption (format, open, close).
 - `btrfs subvolume`: manage Btrfs subvolumes (create, list, delete).
+- `nmtui`: text-based network manager interface to connect to Wi-Fi.
+- `sudo pacman -S inxi`: install inxi tool for system information.
+- `inxi -F`: show detailed system information (CPU, GPU, RAM, disks etc.).
 
 Quick examples:
 
