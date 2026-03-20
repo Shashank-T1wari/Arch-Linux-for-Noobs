@@ -419,3 +419,17 @@ systemctl status bluetooth
 >   3. If your Intel Bluetooth kernel module failed to load initially, force it to load with: `sudo modprobe btusb` and restart the service.
 
 Once you verify all hardware is responding, your base system is 100% prepared to have a graphical desktop interface (like Hyprland/Wayland) installed on top of it.
+
+---
+
+## 8. Official Arch Wiki References
+
+For deeper reading and troubleshooting, here are the official Arch Linux Wiki pages used to construct this guide:
+
+- **CPU Microcode:** [https://wiki.archlinux.org/title/Microcode](https://wiki.archlinux.org/title/Microcode)
+- **Intel Graphics:** [https://wiki.archlinux.org/title/Intel_graphics](https://wiki.archlinux.org/title/Intel_graphics)
+- **NVIDIA Drivers:** [https://wiki.archlinux.org/title/NVIDIA](https://wiki.archlinux.org/title/NVIDIA)
+- **PRIME (NVIDIA Optimus):** [https://wiki.archlinux.org/title/PRIME](https://wiki.archlinux.org/title/PRIME)
+- **Wayland Support:** [https://wiki.archlinux.org/title/Wayland#Requirements](https://wiki.archlinux.org/title/Wayland#Requirements)
+- **PipeWire (Audio):** [https://wiki.archlinux.org/title/PipeWire](https://wiki.archlinux.org/title/PipeWire)
+- **Bluetooth:** [https://wiki.archlinux.org/title/Bluetooth](https://wiki.archlinux.org/title/Bluetooth)
