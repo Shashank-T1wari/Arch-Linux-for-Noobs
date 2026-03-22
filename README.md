@@ -27,6 +27,6 @@ Because of its manual installation process and hands-on configuration, Arch Linu
 ## Table of Contents
 
 1. [Installation Process](installation-process.md)
-2. [System Configuration](system-configuration.md)
-3. [Package Management](package-management.md)
-4. [Maintenance and Updates](maintenance-and-updates.md)
+2. [Adding Drivers](adding-drivers.md)
+3. [GUI Installation](gui-installation.md)
+4. [Hyprland Configuration](hyprland-configuration.md)

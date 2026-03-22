@@ -422,7 +422,15 @@ Once you verify all hardware is responding, your base system is 100% prepared to
 
 ---
 
-## 8. Official Arch Wiki References
+## 8. What are the Next Steps? (GUI Installation)
+
+Now that your specific hardware components, most importantly your NVIDIA graphics drivers, are fully installed and configured, your system is perfectly primed to support a modern graphical environment.
+
+**To begin installing Wayland, the Hyprland Window Manager, and the rest of your graphical interface, proceed to the next guide: [gui-installation.md](gui-installation.md).**
+
+---
+
+## 9. Official Arch Wiki References
 
 For deeper reading and troubleshooting, here are the official Arch Linux Wiki pages used to construct this guide:
 

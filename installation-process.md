@@ -1609,7 +1609,17 @@ sudo systemctl start /dev/zram0
 
 ---
 
-## 15. Sources
+## 15. What are the Next Steps? (Adding Drivers)
+
+Congratulations! You have successfully installed a completely functional base Arch Linux system. Right now, it is purely a text-based environment. 
+
+Before we move on to installing a graphical desktop, you need to properly configure your laptop's specific hardware components (like your NVIDIA graphics card, Intel Wi-Fi, audio, and Bluetooth).
+
+**To begin configuring your hardware, proceed to the next guide: [adding-drivers.md](adding-drivers.md).**
+
+---
+
+## 16. Sources
 
 - [https://wiki.archlinux.org/title/Installation_guide](https://wiki.archlinux.org/title/Installation_guide)
 - [https://wiki.archlinux.org/title/USB_flash_installation_medium](https://wiki.archlinux.org/title/USB_flash_installation_medium)
