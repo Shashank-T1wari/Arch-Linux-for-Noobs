@@ -261,21 +261,90 @@ From the choices you already made above, your actual Hyprland rice stack is:
 
 `hyprpanel` is optional in this path. Add it later after you validate your current baseline.
 
-Install the stack (or re-run safely to confirm all are present):
+Install the stack (excluding swaync - see 4.6 below):
 
 ```Bash
-sudo pacman -S kitty hyprpaper swaync rofi-wayland thunar thunar-volman gvfs tumbler file-roller yazi brightnessctl
+sudo pacman -S kitty hyprpaper rofi-wayland thunar thunar-volman gvfs tumbler file-roller yazi brightnessctl
 ```
 
 Verify each binary is available:
 
 ```Bash
-command -v kitty hyprpaper swaync rofi thunar yazi brightnessctl
+command -v kitty hyprpaper rofi thunar yazi brightnessctl
 ```
 
-If each command prints a path (for example `/usr/bin/rofi`), installation is complete and your baseline package setup is ready.
+If each command prints a path (for example `/usr/bin/rofi`), installation is complete.
 
-### 4.6 Optional: Install hyprpanel from Git (AUR PKGBUILD)
+### 4.6 Install swaync from AUR (IMPORTANT - Not in Official Repos)
+
+**IMPORTANT:** `swaync` from official repos has D-Bus notification name conflicts. You **MUST** install it from AUR instead.
+
+**Step 1: Install build tools**
+
+Run:
+```Bash
+sudo pacman -S --needed base-devel git
+```
+
+**Step 2: Clone swaync from AUR**
+
+Run:
+```Bash
+git clone https://aur.archlinux.org/swaync.git
+cd swaync
+```
+
+(Output example)
+```Bash
+Cloning into 'swaync'...
+remote: Enumerating objects: 124, done.
+remote: Counting objects: 100% (124/124), done.
+```
+
+**Step 3: Build and install**
+
+Run:
+```Bash
+makepkg -si
+```
+
+**What this does:**
+- `makepkg` = Build the package from source
+- `-s` = Install missing dependencies automatically
+- `-i` = Install after building
+
+(Output example - may take 2-5 minutes)
+```Bash
+==> Making package: swaync 0.12.6-1 (Sat May 04 21:30:00 IST 2026)
+==> Checking runtime dependencies...
+==> Building swaync...
+[...build output...]
+==> Installing package with pacman...
+```
+
+**Step 4: Verify installation**
+
+Run:
+```Bash
+pacman -Q swaync
+```
+
+(Expected output)
+```Bash
+swaync 0.12.6-1
+```
+
+Run:
+```Bash
+which swaync
+```
+
+(Expected output)
+```Bash
+/usr/bin/swaync
+```
+
+### 4.7 Optional: Install hyprpanel from Git (AUR PKGBUILD)
 
 If `hyprpanel` is not available via official repos on your system, install it from the AUR git repository with:
 
@@ -308,6 +377,8 @@ Run this block to verify that your selected stack is installed:
 ```Bash
 pacman -Q kitty rofi-wayland thunar thunar-volman gvfs tumbler file-roller yazi brightnessctl \
 hyprpaper swaync hyprpolkitagent xdg-desktop-portal xdg-desktop-portal-hyprland wl-clipboard cliphist
+
+**Note:** If you installed swaync from AUR (as recommended in 4.6), it should appear in this list.
 ```
 
 Output Example:
@@ -362,5 +433,789 @@ Optional process check (what is currently running):
 ```Bash
 pgrep -af "hyprpaper|hyprpanel|swaync|hyprpolkitagent|wl-paste|xdg-desktop-portal"
 ```
+
+---
+
+## 6. Activating All Services (Systemd - Best Practice)
+
+Now that all packages are installed and verified, we need to activate them so they run every time you log into Hyprland.
+
+**The best approach:** Use **systemd user services** for everything that has them. Systemd provides:
+- ✅ Auto-restart if a service crashes
+- ✅ Persistent across sessions (not restarted on Hyprland reload)
+- ✅ No duplicate instances eating RAM
+- ✅ Can start before Hyprland loads
+- ✅ Easy to manage with standard commands
+
+---
+
+### 6.1 Enable All Systemd Services (Recommended)
+
+Most of your services have systemd files. Enable them all at once:
+
+**Enable all services:**
+
+Run:
+```bash
+systemctl --user enable hyprpaper.service swaync.service xdg-desktop-portal.service xdg-desktop-portal-hyprland.service hyprpolkitagent.service cliphist.service
+```
+
+(Output example)
+```bash
+Created symlink /etc/systemd/user/multi-user.target.wants/hyprpaper.service → /usr/lib/systemd/user/hyprpaper.service.
+Created symlink /etc/systemd/user/multi-user.target.wants/swaync.service → /usr/lib/systemd/user/swaync.service.
+Created symlink /etc/systemd/user/multi-user.target.wants/xdg-desktop-portal.service → /usr/lib/systemd/user/xdg-desktop-portal.service.
+Created symlink /etc/systemd/user/multi-user.target.wants/xdg-desktop-portal-hyprland.service → /usr/lib/systemd/user/xdg-desktop-portal-hyprland.service.
+Created symlink /etc/systemd/user/multi-user.target.wants/hyprpolkitagent.service → /usr/lib/systemd/user/hyprpolkitagent.service.
+Created symlink /etc/systemd/user/multi-user.target.wants/cliphist.service → /usr/lib/systemd/user/cliphist.service.
+```
+
+**What this does:**
+- `systemctl --user` = Manage user-level services (not system-level)
+- `enable` = Start these services every time you log in
+- Creates symlinks so systemd knows to auto-start them
+
+**Start all services immediately:**
+
+Run:
+```bash
+systemctl --user start hyprpaper.service swaync.service xdg-desktop-portal.service xdg-desktop-portal-hyprland.service hyprpolkitagent.service cliphist.service
+```
+
+(Output example: usually silent, which means success)
+
+---
+
+### 6.2 Verify All Systemd Services Are Running
+
+Run this to check all at once:
+
+Run:
+```bash
+systemctl --user status hyprpaper.service swaync.service xdg-desktop-portal.service xdg-desktop-portal-hyprland.service hyprpolkitagent.service cliphist.service
+```
+
+(Output example - abbreviated for readability)
+```bash
+● hyprpaper.service - Hyprland Wallpaper utility
+   Loaded: loaded (/usr/lib/systemd/user/hyprpaper.service; enabled; preset: disabled)
+   Active: active (running) since Sat 2026-05-04 14:30:22 IST; 2min ago
+
+● swaync.service - Simple Wayland Notification Center
+   Loaded: loaded (/usr/lib/systemd/user/swaync.service; enabled; preset: disabled)
+   Active: active (running) since Sat 2026-05-04 14:30:23 IST; 2min ago
+
+● xdg-desktop-portal.service - Portal service
+   Loaded: loaded (/usr/lib/systemd/user/xdg-desktop-portal.service; enabled; preset: disabled)
+   Active: active (running) since Sat 2026-05-04 14:30:24 IST; 2min ago
+
+● xdg-desktop-portal-hyprland.service - Hyprland Portal
+   Loaded: loaded (/usr/lib/systemd/user/xdg-desktop-portal-hyprland.service; enabled; preset: disabled)
+   Active: active (running) since Sat 2026-05-04 14:30:25 IST; 2min ago
+
+● hyprpolkitagent.service - Hyprland Polkit Authentication Agent
+   Loaded: loaded (/usr/lib/systemd/user/hyprpolkitagent.service; enabled; preset: disabled)
+   Active: active (running) since Sat 2026-05-04 14:30:26 IST; 2min ago
+
+● cliphist.service - Wayland Clipboard Manager
+   Loaded: loaded (/usr/lib/systemd/user/cliphist.service; enabled; preset: disabled)
+   Active: active (running) since Sat 2026-05-04 14:30:27 IST; 2min ago
+```
+
+**Expected Result for each service:**
+- `Loaded:` shows `enabled`
+- `Active:` shows `active (running)`
+
+If any shows `inactive`, restart that specific service:
+
+```bash
+systemctl --user restart SERVICE_NAME.service
+```
+
+---
+
+### 6.3 Activate wl-paste (Special Case - Not a Service)
+
+`wl-paste` is a utility tool, not a service, so it needs to be activated via `exec-once` in your Hyprland config.
+
+**Edit your config:**
+
+Run:
+```bash
+nvim ~/.config/hypr/hyprland.conf
+```
+
+**Find or create an `# ========== AUTOSTART ==========` section and add:**
+
+```bash
+# ========== AUTOSTART (Tools) ==========
+
+# Clipboard watching (wl-paste with cliphist)
+exec-once = wl-paste --type text --watch cliphist store
+exec-once = wl-paste --type image --watch cliphist store
+```
+
+**Save:** `Ctrl + O`, `Enter`, `Ctrl + X`
+
+**Reload Hyprland:**
+
+Run:
+```bash
+hyprctl reload
+```
+
+(Output example)
+```bash
+Reloading the config...
+```
+
+---
+
+### 6.4 Check hyprpanel (Optional)
+
+`hyprpanel` may or may not have a systemd service depending on your version. Check:
+
+Run:
+```bash
+ls /usr/lib/systemd/user/hyprpanel.service
+```
+
+**If file exists:**
+
+Enable it:
+```bash
+systemctl --user enable hyprpanel.service
+systemctl --user start hyprpanel.service
+```
+
+**If file doesn't exist:**
+
+Add to your `hyprland.conf` instead:
+
+```bash
+exec-once = hyprpanel
+```
+
+---
+
+### 6.5 Final Process Check - All Services
+
+After systemd services are enabled and wl-paste is added to config, verify everything:
+
+Run:
+```bash
+pgrep -af "hyprpaper|hyprpanel|swaync|hyprpolkitagent|wl-paste|cliphist|xdg-desktop-portal"
+```
+
+(Output example)
+```bash
+/usr/bin/hyprpaper
+/usr/bin/hyprpanel --config ~/.config/hyprpanel
+/usr/bin/swaync
+/usr/lib/hyprpolkitagent/hyprpolkitagent
+wl-paste --type text --watch cliphist store
+wl-paste --type image --watch cliphist store
+cliphist store
+/usr/lib/xdg-desktop-portal
+/usr/lib/xdg-desktop-portal-hyprland
+/usr/lib/xdg-desktop-portal-gtk
+```
+
+**All processes should be running!** ✅
+
+---
+
+### 6.6 Comparison: Systemd vs exec-once
+
+**Enable the service to start on login:**
+
+Run:
+```bash
+systemctl --user enable hyprpolkitagent.service
+```
+
+(Output example)
+```bash
+Created symlink /etc/systemd/user/multi-user.target.wants/hyprpolkitagent.service → /usr/lib/systemd/user/hyprpolkitagent.service.
+```
+
+**What this does:**
+- `systemctl --user` = Manage user-level services (not system-level)
+- `enable` = Start this service every time you log in
+- `hyprpolkitagent.service` = The polkit authentication agent service
+
+**Start the service immediately:**
+
+Run:
+```bash
+systemctl --user start hyprpolkitagent.service
+```
+
+(Output example: usually silent, which means success)
+
+**Verify it's running:**
+
+Run:
+```bash
+systemctl --user status hyprpolkitagent.service
+```
+
+(Output example)
+```bash
+● hyprpolkitagent.service - Hyprland Polkit Authentication Agent
+   Loaded: loaded (/usr/lib/systemd/user/hyprpolkitagent.service; enabled; preset: disabled)
+   Active: active (running) since Sat 2026-05-04 14:30:22 IST; 2min ago
+     Main PID: 1234 (hyprpolkitagent)
+   Status: "Ready"
+   CGroup: /user.slice/user-1000.slice/user@1000.service/hyprpolkitagent.service
+           └─1234 /usr/lib/hyprpolkitagent/hyprpolkitagent
+```
+
+**Expected Result:**
+- `Loaded:` shows `enabled`
+- `Active:` shows `active (running)`
+
+---
+
+### 6.6 Comparison: Systemd vs exec-once
+
+| Aspect | Systemd Services | exec-once (Tools) |
+|--------|:----------------:|:----------------:|
+| **Auto-restart** | ✅ Yes, if crashes | ❌ Only on Hyprland reload |
+| **Duplicate instances** | ❌ Never | ⚠️ Can duplicate on reload |
+| **Boot behavior** | ✅ Starts with user session | ❌ Only in Hyprland |
+| **Resource use** | ✅ Persistent, clean | ⚠️ Can accumulate if reload |
+| **Easy to manage** | ✅ Standard commands | ✅ Text-based config |
+| **Used for** | Services (daemons) | Tools with arguments |
+
+---
+
+### 6.7 Your Service Breakdown
+
+Here's exactly what you're running on your system:
+
+**Via Systemd (Auto-managed):**
+- ✅ `hyprpaper` - Wallpaper daemon
+- ✅ `swaync` - Notification center
+- ✅ `xdg-desktop-portal` - Portal base
+- ✅ `xdg-desktop-portal-hyprland` - Screen sharing support
+- ✅ `hyprpolkitagent` - Polkit auth agent
+- ✅ `cliphist` - Clipboard history storage
+
+**Via exec-once (Tools with arguments):**
+- ⚙️ `wl-paste --type text --watch cliphist store` - Watch text clipboard
+- ⚙️ `wl-paste --type image --watch cliphist store` - Watch image clipboard
+- ⚙️ `hyprpanel` (if you have it, or no systemd file)
+
+---
+
+### 6.8 Individual Service Details
+
+#### **hyprpaper (Wallpaper Daemon)**
+
+Check status:
+```bash
+systemctl --user status hyprpaper.service
+```
+
+Expected output: `active (running)`
+
+View config location:
+```bash
+cat ~/.config/hypr/hyprpaper.conf
+```
+
+#### **swaync (Notification Center)**
+
+Check status:
+```bash
+systemctl --user status swaync.service
+```
+
+Expected output: `active (running)`
+
+Test notification:
+```bash
+notify-send "Test" "This is a test notification"
+```
+
+#### **xdg-desktop-portal (Screen Sharing & Dialogs)**
+
+Check status:
+```bash
+systemctl --user status xdg-desktop-portal-hyprland.service
+```
+
+Expected output: `active (running)`
+
+Test screen sharing (will work in Discord/OBS after this)
+
+#### **hyprpolkitagent (Password Prompts)**
+
+Check status:
+```bash
+systemctl --user status hyprpolkitagent.service
+```
+
+Expected output: `active (running)`
+
+Test: Try to open a GUI app that needs root (like `thunar` pointing to `/root`)
+
+#### **cliphist (Clipboard History)**
+
+Check status:
+```bash
+systemctl --user status cliphist.service
+```
+
+Expected output: `active (running)`
+
+View stored clipboard history:
+```bash
+cliphist list
+```
+
+---
+
+### 6.9 Troubleshooting: Service Not Working
+
+#### **Problem: Service shows `inactive (dead)` but is enabled**
+
+**Solution: Start it manually**
+
+Run:
+```bash
+systemctl --user start SERVICE_NAME.service
+```
+
+Check if it starts:
+```bash
+systemctl --user status SERVICE_NAME.service
+```
+
+If still fails, see error logs:
+```bash
+journalctl --user -eu SERVICE_NAME.service
+```
+
+(Shows detailed error messages)
+
+---
+
+#### **Problem: Service crashes immediately**
+
+**Step 1: Check error logs**
+
+Run:
+```bash
+journalctl --user -eu SERVICE_NAME.service --tail -30
+```
+
+(Shows last 30 lines of error output)
+
+**Step 2: Check if binary exists**
+
+Run:
+```bash
+which SERVICE_NAME
+```
+
+or for nested binaries:
+
+```bash
+pacman -Q SERVICE_NAME
+```
+
+**Step 3: Disable and try exec-once instead**
+
+If systemd service keeps failing, disable it and use exec-once:
+
+Run:
+```bash
+systemctl --user disable SERVICE_NAME.service
+```
+
+Then add to `~/.config/hypr/hyprland.conf`:
+
+```bash
+exec-once = SERVICE_NAME
+```
+
+---
+
+#### **Problem: swaync fails with "Could not acquire notification name" error**
+
+**This is the most common issue. Root cause: swaync from official repos has D-Bus conflicts.**
+
+**Error example (in logs):**
+```bash
+swaync[1234]: Could not acquire notification name. Please close any other notification daemon like mako or dunst
+```
+
+**Solution 1: Reinstall from AUR (RECOMMENDED)**
+
+The official repo version has D-Bus state issues. A clean AUR build fixes this completely.
+
+Run:
+```bash
+# Step 1: Kill all notification daemons
+pkill -9 swaync dunst mako notify-daemon
+
+# Step 2: Remove old installation
+sudo pacman -R swaync
+
+# Step 3: Clear package cache
+sudo pacman -Sc
+
+# Step 4: Install fresh from AUR
+sudo pacman -S --needed base-devel git
+git clone https://aur.archlinux.org/swaync.git
+cd swaync
+makepkg -si
+
+# Step 5: Enable and start
+systemctl --user enable swaync.service
+systemctl --user start swaync.service
+
+# Step 6: Verify
+systemctl --user status swaync.service
+```
+
+**Verify it works:**
+```bash
+notify-send "Test" "Notification test"
+```
+
+(You should see a notification in the top-right corner)
+
+---
+
+#### **Problem: Services not starting after reboot**
+
+**Step 1: Verify services are enabled**
+
+Run:
+```bash
+systemctl --user list-unit-files | grep enabled
+```
+
+(Shows all enabled user services)
+
+**Step 2: Re-enable them**
+
+Run:
+```bash
+systemctl --user enable hyprpaper.service swaync.service xdg-desktop-portal.service xdg-desktop-portal-hyprland.service hyprpolkitagent.service cliphist.service
+```
+
+**Step 3: Reboot and verify**
+
+Run:
+```bash
+reboot
+```
+
+After reboot:
+```bash
+pgrep -af "hyprpaper|swaync|xdg-desktop-portal|hyprpolkitagent|cliphist"
+```
+
+---
+
+### 6.10 Final Verification (Fresh Reboot Test)
+
+The best test is a complete logout and login cycle:
+
+**Logout from Hyprland:**
+
+Press `SUPER + SHIFT + Q` (or use exit keybind from wizard)
+
+**Log back in to Hyprland**
+
+Check all services immediately:
+
+Run:
+```bash
+pgrep -af "hyprpaper|hyprpanel|swaync|hyprpolkitagent|wl-paste|cliphist|xdg-desktop-portal"
+```
+
+**All processes should appear within 2-3 seconds!**
+
+If any are missing:
+1. Check service status with `systemctl --user status SERVICE_NAME.service`
+2. Check logs with `journalctl --user -eu SERVICE_NAME.service`
+3. Refer to section 6.9 troubleshooting
+
+---
+
+### 6.11 Quick Reference: Service Management Commands
+
+```bash
+# Enable a service to start on login
+systemctl --user enable SERVICE_NAME.service
+
+# Start a service immediately
+systemctl --user start SERVICE_NAME.service
+
+# Check if service is running
+systemctl --user status SERVICE_NAME.service
+
+# Stop a service
+systemctl --user stop SERVICE_NAME.service
+
+# Disable a service (won't start on login)
+systemctl --user disable SERVICE_NAME.service
+
+# View service errors
+journalctl --user -eu SERVICE_NAME.service
+
+# List all enabled user services
+systemctl --user list-unit-files | grep enabled
+
+# Restart a service
+systemctl --user restart SERVICE_NAME.service
+```
+
+---
+
+### 6.12 What Each Service Does (Reference)
+
+| Service | Purpose | If Missing |
+|---------|---------|-----------|
+| **hyprpaper** | Sets desktop wallpaper on startup | Desktop has default/black background |
+| **swaync** | Notification daemon + control center | No notifications or popup alerts |
+| **xdg-desktop-portal** | Base portal for system integration | File dialogs may not work properly |
+| **xdg-desktop-portal-hyprland** | Hyprland-specific screen sharing support | Can't share screen in Discord/OBS/WebRTC |
+| **hyprpolkitagent** | Asks for password when admin access needed | GUI apps crash when needing root permissions |
+| **cliphist** | Stores clipboard history for retrieval | Can't access past copied items |
+| **wl-paste** | Watches clipboard and sends to cliphist | Clipboard history won't capture new items |
+
+---
+
+### 6.13 Systemd Service Cheat Sheet
+
+**After enabling services, they will:**
+- ✅ Auto-start every time you log in
+- ✅ Restart automatically if they crash
+- ✅ Not duplicate instances on Hyprland reload
+- ✅ Persist until you disable them
+- ✅ Log to journalctl for easy debugging
+
+**To verify at any time:**
+
+```bash
+systemctl --user status hyprpaper.service swaync.service xdg-desktop-portal-hyprland.service hyprpolkitagent.service cliphist.service
+```
+
+If anything shows `inactive`, use the troubleshooting steps in section 6.9.
+
+---
+
+**Congratulations! All services are now properly configured and managed by systemd.** 🎉
+
+You now have:
+- ✅ Wallpaper daemon running
+- ✅ Notification center active
+- ✅ Screen sharing enabled
+- ✅ Password prompts working
+- ✅ Clipboard history tracking
+- ✅ Polkit authentication agent ready
+
+**Next Steps:** Follow the Hyprland wiki configuration order from section 7 onwards.
+
+---
+
+**Step 1: Verify the binary exists**
+
+Run:
+```bash
+ls -la /usr/lib/hyprpolkitagent/hyprpolkitagent
+```
+
+(Expected output: file path and permissions)
+
+**If file not found:**
+
+Reinstall the package:
+```bash
+sudo pacman -S hyprpolkitagent
+```
+
+**Step 2: Check systemd service status**
+
+Run:
+```bash
+systemctl --user status hyprpolkitagent.service
+```
+
+**If status shows `inactive`:**
+
+Start it manually:
+```bash
+systemctl --user start hyprpolkitagent.service
+```
+
+**Step 3: Check for errors**
+
+Run:
+```bash
+journalctl --user -eu hyprpolkitagent.service
+```
+
+(Shows error messages if the service fails to start)
+
+**If you see permission errors:**
+
+Try running directly with full path:
+```bash
+/usr/lib/hyprpolkitagent/hyprpolkitagent &
+```
+
+---
+
+#### **Problem: hyprpaper not showing wallpaper**
+
+**Step 1: Verify hyprpaper is running**
+
+Run:
+```bash
+pgrep hyprpaper
+```
+
+**Step 2: Check if hyprpaper config exists**
+
+Run:
+```bash
+cat ~/.config/hypr/hyprpaper.conf
+```
+
+(Expected output: config file content)
+
+**If file doesn't exist, create it:**
+
+```bash
+mkdir -p ~/.config/hypr
+nvim ~/.config/hypr/hyprpaper.conf
+```
+
+Add this basic config:
+
+```bash
+preload = /path/to/your/wallpaper.png
+wallpaper = HDMI-1,/path/to/your/wallpaper.png
+```
+
+Replace `HDMI-1` with your actual display name (find it with `hyprctl monitors`)
+
+Replace `/path/to/your/wallpaper.png` with an actual wallpaper file.
+
+---
+
+#### **Problem: wl-paste clipboard not working**
+
+**Step 1: Verify wl-clipboard is installed**
+
+Run:
+```bash
+pacman -Q wl-clipboard
+```
+
+(Expected output: version number)
+
+**If not installed:**
+
+```bash
+sudo pacman -S wl-clipboard cliphist
+```
+
+**Step 2: Test copying and pasting manually**
+
+In your terminal, type something and copy it:
+
+```bash
+echo "test clipboard" | wl-copy
+```
+
+Then paste it back:
+
+```bash
+wl-paste
+```
+
+(Expected output: `test clipboard`)
+
+**If wl-paste returns empty:**
+
+Your clipboard might be broken. Try:
+
+```bash
+sudo pacman -Syu wl-clipboard
+```
+
+Then log out and log back in.
+
+---
+
+#### **Problem: xdg-desktop-portal not working (screen sharing fails)**
+
+**Step 1: Verify the portal is running**
+
+Run:
+```bash
+pgrep -f xdg-desktop-portal-hyprland
+```
+
+**Step 2: Check environment variables**
+
+Run:
+```bash
+echo $XDG_CURRENT_DESKTOP
+```
+
+(Expected output: `Hyprland`)
+
+**If output is empty or wrong:**
+
+Add this to `~/.config/hypr/hyprland.conf`:
+
+```bash
+env = XDG_CURRENT_DESKTOP,Hyprland
+```
+
+Then reload:
+
+```bash
+hyprctl reload
+```
+
+**Step 3: Reinstall the portal**
+
+```bash
+sudo pacman -S xdg-desktop-portal-hyprland xdg-desktop-portal
+```
+
+---
+
+### 6.6 Final Verification (After Reboot)
+
+The best test is a fresh reboot. After rebooting and logging into Hyprland, run:
+
+```bash
+pgrep -af "hyprpaper|hyprpanel|hyprpolkitagent|wl-paste|xdg-desktop-portal"
+```
+
+**All services should appear immediately without manual starting.** If they don't, check the systemd service status as shown in section 6.3.
+
+---
+
+### 6.7 What Each Service Does
+
+| Service | Purpose | If Missing |
+|---------|---------|-----------|
+| **hyprpaper** | Sets desktop wallpaper | Desktop looks plain/default |
+| **hyprpanel** | Top status bar (time, battery, workspaces) | No status bar visible at top |
+| **hyprpolkitagent** | Asks for password when admin apps run | Apps crash when needing root access |
+| **wl-paste + cliphist** | Copy/paste history | Copy-paste broken or history unavailable |
+| **xdg-desktop-portal** | Screen sharing (Discord, OBS) + file dialogs | Can't share screen, file open menus broken |
 
 ---
