@@ -358,11 +358,11 @@ lsblk
 
 ```bash
 NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
-sda           8:0    0  100G  0 disk
-└─sda1        8:1    0 14.9G  0 part /mnt
-nvme0n1     259:0    0 1000G  0 disk
-└─nvme0n1p1 259:1    0    1G  0 part
-└─nvme0n1p2 259:2    0    4G  0 part
+sda           8:0    0  14.9G 0 disk
+└─sda1        8:1    0  14.9G 0 part /mnt
+nvme0n1     259:0    0   476G 0 disk
+├─nvme0n1p1 259:1    0   512M 0 part
+└─nvme0n1p2 259:2    0 475.5G 0 part
 ```
 Meaning:
 
@@ -480,37 +480,7 @@ Purpose:
 - Stores bootloader files.
 - Required for UEFI boot.
 
-### *6.2.4 Create Swap partition*
-
-Select:
-```bash
-Free space
-```
-Enter:
-```bash
-[New]
-```
-Enter size:
-```bash
-8G
-```
-Now Change Type to `Linux swap`:
-
-Select:
-```bash
-[Type]
-```
-Choose:
-```bash
-Linux swap
-```
-Press __Enter__.
-
-Purpose:
-- Used when RAM is full.
-- 8GB is a common size for swap, but you can adjust based on your needs (e.g., 4GB for light use, 16GB+ for heavy workloads).
-
-### *6.2.5 Create root partition*
+### *6.2.4 Create root partition*
 
 Rest of the free space is used.
 
@@ -531,10 +501,9 @@ Purpose
 
 Expected partition names:
 - `/dev/nvme0n1p1` EFI
-- `/dev/nvme0n1p2` SWAP
-- `/dev/nvme0n1p3` ROOT
+- `/dev/nvme0n1p2` ROOT
 
-### *6.2.6 Write changes to disk*
+### *6.2.5 Write changes to disk*
 
 Until now __nothing has actually changed on disk__.
 
@@ -547,7 +516,7 @@ Press __Enter__ to confirm.
 Purpose
 - Applies partition table changes to disk
 
-### *6.2.7 Exit `cfdisk`*
+### *6.2.6 Exit `cfdisk`*
 
 Select:
 ```bash
@@ -566,51 +535,39 @@ You should see:
 ```bash
 nvme0n1
 ├─nvme0n1p1 512M
-├─nvme0n1p2 8G
-└─nvme0n1p3 467G
+└─nvme0n1p2 475.5G
 ```
 
 Meaning:
 | Partition   | Purpose          |
 |-------------|------------------|
 | `nvme0n1p1` | EFI              |
-| `nvme0n1p2` | Swap             |
-| `nvme0n1p3` | Root filesystem  |
+| `nvme0n1p2` | Root filesystem  |
 
-### 6.3 Format partitions
+### 6.4 Format partitions
 
 ```bash
 mkfs.fat -F 32 /dev/nvme0n1p1
-mkswap /dev/nvme0n1p2
-swapon /dev/nvme0n1p2
-mkfs.ext4 /dev/nvme0n1p3
+mkfs.xfs -f /dev/nvme0n1p2
 ```
 
 What each command does:
 - `mkfs.fat -F 32`: makes FAT32 filesystem for EFI partition.
-- `mkswap`: prepares swap partition.
-- `swapon`: Activates the swap partiton immediately.
-Without this command the swap space is not usable.
-- `mkfs.ext4`: makes ext4 filesystem for root partition.
+- `mkfs.xfs -f`: makes high-performance XFS filesystem for the root partition (-f forces format if previously used).
 
-### 6.4 Mount partitions
+### 6.5 Mount partitions
+
+Mount the root partition first, then create the boot directory and mount the EFI partition.
 
 ```bash
-mount /dev/nvme0n1p3 /mnt
+mount /dev/nvme0n1p2 /mnt
 mkdir /mnt/boot
 mount /dev/nvme0n1p1 /mnt/boot
 ```
 
 Meaning:
-- Root partition is mounted to `/mnt` (install target path).
-- Creates a directory where the EFI partition will mount.
+- Root partition mounted at `/mnt`.
 - EFI partition mounted at `/mnt/boot`.
-
-Final mount structure:
-```bash
-/mnt      -> root filesystem
-/mnt/boot -> EFI partition
-```
 
 > `What can go wrong here?` Formatting the wrong disk (most serious mistake), or creating wrong partition layout.
 
@@ -621,7 +578,7 @@ Final mount structure:
 ## 7. Install Base Arch System
 
 ```bash
-pacstrap /mnt base linux linux-firmware nano networkmanager grub efibootmgr
+pacstrap /mnt base linux linux-firmware neovim networkmanager grub efibootmgr zram-generator xfsprogs
 ```
 
 Purpose:
@@ -633,10 +590,12 @@ Packages Installed:
 | base           | minimal Arch system    |
 | linux          | kernel                 |
 | linux-firmware | hardware firmware      |
-| nano           | text editor            |
+| neovim         | text editor            |
 | networkmanager | network management     |
 | grub           | bootloader             |
 | efibootmgr     | EFI boot configuration |
+| zram-generator | Manages ZRAM swap      |
+| xfsprogs       | XFS filesystem utilities |
 
 __Warning seen__
 
@@ -687,7 +646,7 @@ Purpose:
 
 Prompt becomes:
 ```bash
-[root@archlinux /]#
+[root@archiso /]#
 ```
 
 ### 8.1 Set timezone and hardware clock
@@ -708,7 +667,7 @@ Replace `Asia/Kolkata` with your region if needed.
 ### 8.2 Configure locale (language/encoding)
 
 ```bash
-nano /etc/locale.gen
+nvim /etc/locale.gen
 ```
 
 Uncomment:
@@ -730,7 +689,7 @@ Purpose:
 ### 8.3 Set hostname (your PC name)
 
 ```bash
-nano /etc/hostname
+nvim /etc/hostname
 ```
 
 (Example hostname)
@@ -762,13 +721,54 @@ Purpose:
 passwd
 ```
 
-Type pasword for the root account.
+Type password for the root account.
+
+### 8.5 Create a regular user account
+
+It is dangerous to use the `root` account for daily tasks. Create a normal user and give them admin (`sudo`) rights. Replace `username` with your desired name.
+
+```bash
+useradd -m -G wheel username
+passwd username
+```
+
+Install `sudo`:
+```bash
+pacman -S sudo
+```
+
+Allow users in the `wheel` group to use `sudo`:
+```bash
+EDITOR=nvim visudo
+```
+Find this line and remove the `#` at the very beginning to uncomment it:
+```text
+# %wheel ALL=(ALL:ALL) ALL
+```
+Save and exit (`:wq` then `Enter`).
 
 ### 8.6 Enable network manager at boot
 
 ```bash
 systemctl enable NetworkManager
 ```
+
+### 8.7 Configure ZRAM Swap (Replaces standard swap partition)
+
+Instead of a disk swap partition, ZRAM creates a compressed block device in RAM. It's much faster.
+
+Create the configuration file:
+```bash
+nvim /etc/systemd/zram-generator.conf
+```
+
+Add these lines to use up to 50% of your RAM for compressed swap:
+```text
+[zram0]
+zram-size = ram / 2
+compression-algorithm = zstd
+```
+Save and exit (`:wq` then `Enter`).
 
 > `What can go wrong here?` Locale not uncommented properly, wrong timezone, or user created without sudo access.
 
@@ -819,19 +819,58 @@ Purpose:
 
 Remove USB when reboot starts.
 
+*(It is now safe to permanently remove the bootable pendrive from your computer).*
+
 > `What can go wrong here?` You forget to remove USB and boot back into installer, or get a black screen due to boot order.
 
 > `How to recover in 2 minutes.` Remove USB, reboot, open boot menu, and choose your internal disk/GRUB entry.
 
 ---
 
-## 11. Some Command and its Meanings
+## 11. Post-Installation Steps
+
+### 11.1 Connect to Wi-Fi
+
+Since this is a fresh boot, your system doesn't remember your Wi-Fi password yet. Run the NetworkManager terminal UI to connect:
+
+```bash
+nmtui
+```
+- Select **Activate a connection**.
+- Choose your Wi-Fi network and enter the password.
+- Press `Esc` and select **Quit**.
+
+Test your connection:
+```bash
+ping -c 4 archlinux.org
+```
+*(Once connected, NetworkManager will auto-connect to this network on future reboots).*
+
+### 11.2 Verify ZRAM is Working
+
+Verify that ZRAM was initialized successfully:
+
+```bash
+zramctl
+```
+
+If ZRAM is active, this will output a table showing `zram0`, the compression algorithm (`zstd`), and the allocated size.
+
+You can also verify using:
+```bash
+free -h
+```
+It should show your ZRAM size under the `Swap` row.
+
+---
+
+## 12. Some Command and its Meanings
 
 - `ls`: similar to Windows `dir`; lists files/folders.
 - `cd`: change directory.
 - `pwd`: print working directory (current location).
 - `cat`: print file text.
-- `nano`: simple terminal text editor.
+- `nvim`: powerful terminal text editor.
 - `sudo`: run command with admin rights.
 - `ip link`: list network interfaces.
 - `ping`: test network reachability.
@@ -840,7 +879,6 @@ Remove USB when reboot starts.
 - `mkfs`: create filesystem.
 - `mount`: attach partition to filesystem tree.
 - `umount`: detach partition.
-- `swapon`: enable swap partition.
 - `pacstrap`: install base system to mounted target.
 - `genfstab`: write persistent mount rules.
 - `arch-chroot`: enter installed system environment.
@@ -858,7 +896,7 @@ sudo pacman -Syu
 
 ---
 
-## 12. Troubleshooting
+## 13. Troubleshooting
 
 ### USB not booting
 
@@ -883,7 +921,7 @@ Boot installer again, remount partitions, `arch-chroot`, rerun GRUB commands.
 
 ---
 
-## 13. Sources
+## 14. Sources
 
 - `https://wiki.archlinux.org/title/Installation_guide`
 - `https://wiki.archlinux.org/title/USB_flash_installation_medium`
